@@ -4,6 +4,20 @@ import tkinter as tk
 from tkinter import filedialog
 import openpyxl
 
+
+def question_settings():
+    # Настройки вопросов
+    # Ответ обязателен?
+    answer_required = 1
+    # Случайный(перемешивание ответов)?
+    answer_random = 0
+    # Отображать баллы?
+    answer_scores = 0
+    # Баллы за этот ответ
+    answer_points = 0
+    return [answer_points, "", answer_required, answer_random, answer_scores]
+
+
 def open_window():
     """Инициализируем tkinter и возвращаем активный лист Excel."""
     root = tk.Tk()
@@ -65,12 +79,22 @@ def generate_tegs(explanations):
 
 def save_to_csv(lighthouse, list_of_dicts, filename):
     """Сохраняет обработанные данные в CSV-файл."""
+    root = tk.Tk()  # Создаем второе скрытое окно
+    root.withdraw()  # Скрываем основное окно
+    folder_path = filedialog.askdirectory(
+        title="Выберете папку для сохранения файла выгрузки")  # Запрашиваем путь для сохранения файла
+    if not folder_path:
+        print("Папка для сохранения не выбрана.")
+        return
+    filename = os.path.join(folder_path, f'{filename}.csv')  # Соединяем путь с именем файла
+    is_exam = (lighthouse == 0)
     filename = f'{filename}.csv'
     with open(filename, mode='w', encoding='utf-8', newline='') as csv_file:
         writer = csv.writer(csv_file, delimiter=',')
-        key = ["settings", "Экзамен" if lighthouse == 0 else "Подготовка", "", "0", "minutes", "",
-               "10", "80", "1000", "", "question_below_each_other", "asc", "1", "200"]
-        seting_quest = ["1.00", "0", "1", "", ""]
+        key = ["settings", "Экзамен" if is_exam else "Подготовка", "", "0", "minutes", "1",
+               "20" if lighthouse == 0 else "0", "80", "10000", "",
+               "single_question" if is_exam else "question_below_each_other", "asc", "1", "200"]
+        seting_quest = question_settings()
         seting_answer_p = ["text", "1"]
         seting_answer_n = ["text"]
         writer.writerow(key)
@@ -80,15 +104,14 @@ def save_to_csv(lighthouse, list_of_dicts, filename):
 
             writer.writerow(question)
             for ans in dictionary['answer']:
-                v = 1
                 correct = ans.endswith('*')
-                if v == 1:
-                    answer_text = ans
+                if is_exam:
+                    answer_text = ans.rstrip('*')
                     answer = ["answer", answer_text, *seting_answer_p] if correct else ["answer", answer_text,
                                                                                         *seting_answer_n]
                     writer.writerow(answer)
                 else:
-                    answer_text = ans.rstrip('*')
+                    answer_text = ans
                     answer = ["answer", answer_text, *seting_answer_p] if correct else ["answer", answer_text,
                                                                                         *seting_answer_n]
                     writer.writerow(answer)
